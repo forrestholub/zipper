@@ -11,12 +11,13 @@ $OS_value = (Get-WmiObject Win32_OperatingSystem).OSArchitecture
 
 $doesHaveInstalled = $null;
 
-## this is for the installer file: $doesHaveInstalled = get-childitem $home -name -include "7zip*";
+#check for MSI file
+$doesHaveMsiDownloaded = get-childitem $home -name -include "7zip*";
 
 #Below if the whole thing is installed
 $doesHaveInstalled = get-childitem 'C:\Program Files\' -name -include "7-Zip*"
 
-if ($null -ne $doesHaveInstalled){
+if ($null -ne $doesHaveMsiDownloaded){
     write-host "Already found adequate 7zip file for use."
 }
 else {
@@ -62,7 +63,9 @@ if ($null -ne $doesHaveInstalled){
     write-host "Already found adequate 7zip file installed."
 }
 Else {
-$install_cmd = "/a " + "$HOME" + "\7zip.msi" + " /passive /promptrestart /L*v" + " $PWD" + "\install-logs.log"
+msiexec /unregister
+msiexec /regserver
+$install_cmd = "/i " + "$HOME" + "\7zip.msi" + " /passive /promptrestart /L*v" + " $PWD" + "\install-logs.log"
 
 write-host $install_cmd
 # current dir ; C:\Users\forre\Desktop\tester
@@ -87,13 +90,14 @@ $filteredFiles = get-childitem . -name -include *.isf -r | sort-object -property
 
 $filteredFiles | 
     ForEach-Object {
-        #Write-Host $_
-        #$timestamp = get-date -format yyMMdd_hh:mm:ss
-        #Write-Host $timestamp
-        $shortlog = $_.substring(0,$_.length-4)
-        7z.exe a -tzip "$pwd\$shortlog.zip" "$pwd\$_" -mx5
-        }
 
+        #$timestamp = get-date -format yyMMdd_hh:mm:ss
+
+        $shortlog = $_.substring(0,$_.length-4)
+        # "a" adds multiple files in folder to archive zip
+        # "-t" types of archive (zip)
+        C:\"Program Files"\7-Zip\7z.exe a -tzip "$pwd\$shortlog.zip" "$pwd\$_" -mx5
+        }
 
 # step 3 -- automatically upload files to FTP of your choice -- 
 # - have text file named: (FTP.CONFIG) with pertinent info ; HOST, USR, PWD, PATH 
